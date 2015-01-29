@@ -78,7 +78,7 @@ overall <- select(dataset,
             X9.5..Provision.of.soft.skills,
             X9.6..Provision.of.monthly.allowance)
 
-NAs <- overall == c("Yes", "organization, schedules, communication.") #deleting wrong answers from couple of questions
+NAs <- overall == c("organization, schedules, communication.") #deleting wrong answers from couple of questions
 overall[NAs] <- NA
 
 adequate_levels <- c("Very inadequate", "Inadequate", "Adequate", "Good", "Excellent") #creating ordered levels of Likert-scales
@@ -95,6 +95,12 @@ overall[,"X3.1..I.felt.confident.that.my.course.coordinator.would.follow.up.on.a
   factor(overall[,"X3.1..I.felt.confident.that.my.course.coordinator.would.follow.up.on.any.unresolved.administrative.issues.or.questions.after.addressing.these.with.him.her.."], levels=agree_levels) 
 overall[,"X4.1.1..Formalized.feedback.system..All.universities.combined"] <- 
   factor(overall[,"X4.1.1..Formalized.feedback.system..All.universities.combined"], levels=feedback_levels) 
+overall[,"X4.1.2..Formalized.feedback.system..Consortium"] <- 
+  factor(overall[,"X4.1.2..Formalized.feedback.system..Consortium"], levels=c("No", "I am not sure", "Somewhat (weak or unclear systems)", "Yes")) 
+overall[,"X4.3..Describe.course.feedback.channels"] <- 
+  factor(overall[,"X4.3..Describe.course.feedback.channels"], levels=c("Very Weak", "Weak", "I am not sure", "Adequate", "Strong", "Very strong")) 
+overall[,"X4.6..Consortium.implementing.recommendaions.given.by.students"] <- 
+  factor(overall[,"X4.6..Consortium.implementing.recommendaions.given.by.students"], levels=c("No", "Yes")) 
 overall[,"X5.2..My.lecturers.provided.me.enough.time.for.individual.consultations.."] <- 
   factor(overall[,"X5.2..My.lecturers.provided.me.enough.time.for.individual.consultations.."], levels=agree_levels) 
 overall[,"X5.2..My.lecturers.were.available.by.email.and.responded.in.a.timely.manner.."] <- 
@@ -135,12 +141,36 @@ overall[,"X9.6..Provision.of.monthly.allowance"] <-
   factor(overall[,"X9.6..Provision.of.monthly.allowance"], levels=adequate_levels) 
 
 
+#choosing only questions with likert scale to find out best courses
+overall_likert <- select(overall,
+              Course.name,
+              starts_with("X3.1"),
+              starts_with("X4.1"),
+              starts_with("X4.3"),
+              starts_with("X5.2"),
+              starts_with("X8"),
+              starts_with("X9"))
+
 question9 <- select(overall,
+            id,
+            Course.name,
             starts_with("X9."))
+
+#creating a table with number of times each level is occuring for each individual program
+mquestion9 <- melt(question9, id = c("id", "Course.name"), na.rm = TRUE) 
+question9_cast <- cast(mquestion9, Course.name ~ variable+value)
+q9_max <- sapply(question9_cast[,2:31], max)
+
+#dividing each respective column by the max value of this column to make relative measure
+data[,2:4] <- sweep(data[,2:4],MARGIN=2,a.mean,"/")
+question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
+
+
+
 lquestion9 <- likert(question9, grouping = overall$Course.name)
 summary_lquestion9 <- summary(lquestion9)
 
-qplot(summary_lquestion9[summary_lquestion9$Item == "X9.6..Provision.of.monthly.allowance",]$mean) #distribution of means for 9.6 question
+#qplot(summary_lquestion9[summary_lquestion9$Item == "X9.6..Provision.of.monthly.allowance",]$mean) #distribution of means for 9.6 question
 
-print.xtable(table_lquestion9, type = "html", file = "table_lquestion9.html")
-plot(lquestion9, centered = FALSE, height = 5000)
+#print.xtable(table_lquestion9, type = "html", file = "table_lquestion9.html")
+#plot(lquestion9, centered = FALSE, height = 5000)
