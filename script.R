@@ -4,6 +4,7 @@ library(foreign)
 library(stats)
 library(reshape)
 library(xtable)
+library(xlsx) #load the package
 
 dataset <- read.csv(file = "../Dataset_2.csv", na.strings = c("", " ", "No answer", "N/A"), header = TRUE)
 summary(dataset)
@@ -173,7 +174,13 @@ print.xtable(moverall_cast_table, type = "html", file = "moverall_cast_table.htm
 #dividing each respective column by the max value of this column to make relative measure
 #question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
 
+#should divide by the overall number of respondents for each individual course
+respondents <- as.vector(summary(overall$Course.name))
 moverall_cast[,2:116] <- sweep(moverall_cast[,2:116], MARGIN = 2, moverall_max, "/")
+weights <- names(moverall_cast)[2:116]
+
+
+#write.xlsx(x = weights, file = "weights.xlsx", sheetName = "weights", row.names = FALSE)
 
 #lquestion9 <- likert(question9, grouping = overall$Course.name)
 #summary_lquestion9 <- summary(lquestion9)
