@@ -167,6 +167,9 @@ moverall <- melt(overall_likert, id = c("id", "Course.name"), na.rm = TRUE)
 moverall_cast <- cast(moverall, Course.name~variable+value)
 moverall_max <- sapply(moverall_cast[,2:116], max)
 
+moverall_cast_table <- xtable(moverall_cast)
+print.xtable(moverall_cast_table, type = "html", file = "moverall_cast_table.html")
+
 #dividing each respective column by the max value of this column to make relative measure
 #question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
 
