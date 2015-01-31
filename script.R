@@ -143,6 +143,7 @@ overall[,"X9.6..Provision.of.monthly.allowance"] <-
 
 #choosing only questions with likert scale to find out best courses
 overall_likert <- select(overall,
+              id,
               Course.name,
               starts_with("X3.1"),
               starts_with("X4.1"),
@@ -157,18 +158,22 @@ question9 <- select(overall,
             starts_with("X9."))
 
 #creating a table with number of times each level is occuring for each individual program
-mquestion9 <- melt(question9, id = c("id", "Course.name"), na.rm = TRUE) 
-question9_cast <- cast(mquestion9, Course.name ~ variable+value)
-q9_max <- sapply(question9_cast[,2:31], max)
+
+#mquestion9 <- melt(question9, id = c("id", "Course.name"), na.rm = TRUE) 
+#question9_cast <- cast(mquestion9, Course.name ~ variable+value)
+#q9_max <- sapply(question9_cast[,2:31], max)
+
+moverall <- melt(overall_likert, id = c("id", "Course.name"), na.rm = TRUE)
+moverall_cast <- cast(moverall, Course.name~variable+value)
+moverall_max <- sapply(moverall_cast[,2:116], max)
 
 #dividing each respective column by the max value of this column to make relative measure
-data[,2:4] <- sweep(data[,2:4],MARGIN=2,a.mean,"/")
-question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
+#question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
 
+moverall_cast[,2:116] <- sweep(moverall_cast[,2:116], MARGIN = 2, moverall_max, "/")
 
-
-lquestion9 <- likert(question9, grouping = overall$Course.name)
-summary_lquestion9 <- summary(lquestion9)
+#lquestion9 <- likert(question9, grouping = overall$Course.name)
+#summary_lquestion9 <- summary(lquestion9)
 
 #qplot(summary_lquestion9[summary_lquestion9$Item == "X9.6..Provision.of.monthly.allowance",]$mean) #distribution of means for 9.6 question
 
