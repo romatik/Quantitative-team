@@ -62,3 +62,8 @@ Temporary Items
 .Rproj.user/5351378/sdb/s-AEEFAA41/E8460924
 .Rproj.user/5351378/sdb/s-AEEFAA41/lock_file
 .Rproj.user/5351378/sdb/per/t/AA2C8845
+.Rhistory
+*.Rhistory
+*.Rhistory
+*.pper
+.Rproj.user/5351378/pcs/source-pane.pper

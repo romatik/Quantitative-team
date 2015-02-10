@@ -159,27 +159,38 @@ question9 <- select(overall,
             starts_with("X9."))
 
 #creating a table with number of times each level is occuring for each individual program
+moverall <- melt(overall_likert, id = c("id", "Course.name"), na.rm = TRUE)
+moverall_cast <- cast(moverall, Course.name~variable+value)
 
+#creating a vector with number of respondents for each course
+respondents <- as.vector(summary(overall$Course.name))
+moverall_cast[,2:116] <- moverall_cast[,2:116]/respondents #creating table with relative numbers
+
+#reading weights from the Excel file
+weights <- read.xlsx ("weights.xlsx", sheetIndex = 1, header= FALSE)
+
+#multiplying by weights
+moverall_cast[,2:116] <- sweep(moverall_cast[,2:116], MARGIN = 2, weights[,1], "*")
+
+#adding a column with final score (sum of all columns)
+moverall_cast <- mutate(moverall_cast, score = rowSums(moverall_cast))
+
+#sorting the table to see the best courses (best at the top)
+sorted <- moverall_cast[order(-moverall_cast$score),] 
+sorted <- select(sorted,
+            Course.name,
+            score)
+
+#can we see some bias in how scores are distributed?
+qplot(x = respondents, y = moverall_cast$score) 
+
+####extra lines####
 #mquestion9 <- melt(question9, id = c("id", "Course.name"), na.rm = TRUE) 
 #question9_cast <- cast(mquestion9, Course.name ~ variable+value)
 #q9_max <- sapply(question9_cast[,2:31], max)
 
-moverall <- melt(overall_likert, id = c("id", "Course.name"), na.rm = TRUE)
-moverall_cast <- cast(moverall, Course.name~variable+value)
-moverall_max <- sapply(moverall_cast[,2:116], max)
-
-moverall_cast_table <- xtable(moverall_cast)
-print.xtable(moverall_cast_table, type = "html", file = "moverall_cast_table.html")
-
-#dividing each respective column by the max value of this column to make relative measure
-#question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
-
-#should divide by the overall number of respondents for each individual course
-respondents <- as.vector(summary(overall$Course.name))
-moverall_cast[,2:116] <- sweep(moverall_cast[,2:116], MARGIN = 2, moverall_max, "/")
-weights <- names(moverall_cast)[2:116]
-
-
+#for creating weights.xslx file
+#weights <- names(moverall_cast)[2:116]
 #write.xlsx(x = weights, file = "weights.xlsx", sheetName = "weights", row.names = FALSE)
 
 #lquestion9 <- likert(question9, grouping = overall$Course.name)
@@ -189,3 +200,12 @@ weights <- names(moverall_cast)[2:116]
 
 #print.xtable(table_lquestion9, type = "html", file = "table_lquestion9.html")
 #plot(lquestion9, centered = FALSE, height = 5000)
+
+#moverall_max <- sapply(moverall_cast[,2:116], max)
+#for printing the table as an example
+
+#moverall_cast_table <- xtable(moverall_cast)
+#print.xtable(moverall_cast_table, type = "html", file = "moverall_cast_table.html")
+
+#dividing each respective column by the max value of this column to make relative measure
+#question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
