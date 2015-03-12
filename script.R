@@ -7,9 +7,7 @@ library(xtable)
 library(xlsx) #load the package
 
 dataset <- read.csv(file = "../Dataset_2.csv", na.strings = c("", " ", "No answer", "N/A"), header = TRUE)
-summary(dataset)
-
-dataset_tbl <- tbl_df(dataset)
+dataset2 <- read.csv(file = "../Dataset_1_Quantitative_team.csv", na.strings = c("", " ", "No answer", "N/A"), header = TRUE)
 
 #dataset with questions about specific universities
 university <- select(dataset_tbl,
@@ -153,11 +151,6 @@ overall_likert <- select(overall,
               starts_with("X8"),
               starts_with("X9"))
 
-question9 <- select(overall,
-            id,
-            Course.name,
-            starts_with("X9."))
-
 #creating a table with number of times each level is occuring for each individual program
 moverall <- melt(overall_likert, id = c("id", "Course.name"), na.rm = TRUE)
 moverall_cast <- cast(moverall, Course.name~variable+value)
@@ -174,15 +167,90 @@ moverall_cast[,2:116] <- sweep(moverall_cast[,2:116], MARGIN = 2, weights[,1], "
 
 #adding a column with final score (sum of all columns)
 moverall_cast <- mutate(moverall_cast, score = rowSums(moverall_cast))
+moverall_cast <- mutate(moverall_cast, respondents = respondents)
 
 #sorting the table to see the best courses (best at the top)
+#sorting is done based on the composite score summing all the values in the table
 sorted <- moverall_cast[order(-moverall_cast$score),] 
 sorted <- select(sorted,
             Course.name,
-            score)
+            score,
+            respondents)
+
+###linear model for finding out if we have a bias in results
+model <- lm(score~respondents, data = moverall_cast)
 
 #can we see some bias in how scores are distributed?
 qplot(x = respondents, y = moverall_cast$score) 
+
+ggplot(data = moverall_cast, aes(x = respondents, y = score)) +
+  geom_point(alpha=1, color="#c0392b") +
+  geom_smooth(alpha=0.25, color="black", fill="black") 
+  #geom_abline(intercept = 5.12599, slope = 0.07046)
+
+#second way to find out rankings
+#each question (e.g. 3.1, 4.2, etc.) is ranked individually (1-80). Then these ranks are summed and divided by the number of questions.
+question3.1 <- select(moverall_cast,
+                      Course.name,
+                      starts_with("X3.1"))
+question4 <- select(moverall_cast,
+                    Course.name,
+                    starts_with("X4"))
+question5 <- select(moverall_cast,
+                    Course.name,
+                    starts_with("X5"))
+question8 <- select(moverall_cast,
+                    Course.name,
+                    starts_with("X8"))
+question9 <- select(moverall_cast,
+                    Course.name,
+                    starts_with("X9"))
+##calculating confidence intervals for means
+intervals <- function(dataset, name, question){
+  temp <- dataset %>%
+        filter(Course.name == name) %>%
+        select(question) %>%
+        data.matrix() %>%
+        t.test(na.rm = TRUE)
+  return(c(temp$conf.int[1], temp$conf.int[2], temp$estimate))
+}
+
+z1 <- intervals(overall_likert, "AFEPA - European Master in Agricultural, Food and Environmental Policy Analysis", 3)
+
+##auxilary function to create ranks for each question
+ranking <- function(x){
+  columns <- ncol(x)
+  x <- mutate(x, score = rowSums(x[,2:columns]))
+  x <- mutate(x, rank = as.integer(rank(-x$score, ties.method = "first")))
+  return(x)
+}
+question3.1 <- ranking(question3.1)
+question4 <- ranking(question4)
+question5 <- ranking(question5)
+question8 <- ranking(question8)
+question9 <- ranking(question9)
+
+#creating rankmatrix with results of rankings from the previous step
+rankmatrix <- cbind(as.character(question3.1$Course.name), question3.1$rank, question4$rank, question5$rank, question8$rank, question9$rank)
+rankmatrix <- as.data.frame(rankmatrix)
+rankmatrix$V2 <- as.numeric(as.character(rankmatrix$V2))
+rankmatrix$V3 <- as.numeric(as.character(rankmatrix$V3))
+rankmatrix$V4 <- as.numeric(as.character(rankmatrix$V4))
+rankmatrix$V5 <- as.numeric(as.character(rankmatrix$V5))
+rankmatrix$V6 <- as.numeric(as.character(rankmatrix$V6))
+rankmatrix$score <- rowMeans (rankmatrix[, 2:6])
+
+#creating sorted matrix with the best programs on the top
+sorted2 <- rankmatrix[order(rankmatrix$score),] 
+
+#plotting the resulting scores as a variable of number of respondents in the course
+ggplot(data = rankmatrix, aes(x = respondents, y = -score)) +
+  geom_point(alpha=1, color="#c0392b") +
+  geom_smooth(alpha=0.25, color="black", fill="black")
+
+
+#creating a matrix with results printed side by side to compare the results
+compare <- cbind(as.character(sorted$Course.name), as.character(sorted2$V1))
 
 ####extra lines####
 #mquestion9 <- melt(question9, id = c("id", "Course.name"), na.rm = TRUE) 
@@ -209,3 +277,5 @@ qplot(x = respondents, y = moverall_cast$score)
 
 #dividing each respective column by the max value of this column to make relative measure
 #question9_cast[,2:31] <- sweep(question9_cast[,2:31], MARGIN = 2, q9_max, "/") #http://stackoverflow.com/questions/15137334/dividing-a-data-frame-or-matrix-by-a-vector-in-r
+#write.csv(university, file = "University.csv")
+#write.csv(overall, file = "Overall.csv")
