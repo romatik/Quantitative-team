@@ -248,6 +248,15 @@ ggplot(data = rankmatrix, aes(x = respondents, y = -score)) +
   geom_point(alpha=1, color="#c0392b") +
   geom_smooth(alpha=0.25, color="black", fill="black")
 
+#### calculating means for every course and for every question
+t.test_simple <- function(x){
+  temp <- t.test(x, na.rm = TRUE)
+  return(c(temp$conf.int[1], temp$conf.int[2], temp$estimate))
+}
+
+overall_likert %>%
+  group_by(Course.name) %>%
+  summarise_each(funs(mean(., na.rm = TRUE)), matches("X"))
 
 #creating a matrix with results printed side by side to compare the results
 compare <- cbind(as.character(sorted$Course.name), as.character(sorted2$V1))
