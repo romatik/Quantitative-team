@@ -254,9 +254,16 @@ t.test_simple <- function(x){
   return(c(temp$conf.int[1], temp$conf.int[2], temp$estimate))
 }
 
-overall_likert %>%
+means <- overall_likert %>%
   group_by(Course.name) %>%
   summarise_each(funs(mean(., na.rm = TRUE)), matches("X"))
+
+###boxplot to help see problematic areas in all the courses
+par(mar=c(25,5,1,1))
+boxplot(means[,-1], las = 2)
+
+means %>%
+  summarise_each(funs(median(., na.rm = TRUE)), matches("X"))
 
 #creating a matrix with results printed side by side to compare the results
 compare <- cbind(as.character(sorted$Course.name), as.character(sorted2$V1))
