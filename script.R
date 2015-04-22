@@ -5,6 +5,7 @@ library(stats)
 library(reshape)
 library(xtable)
 library(xlsx) #load the package
+library(gplots)
 
 dataset <- read.csv(file = "../Dataset_2.csv", na.strings = c("", " ", "No answer", "N/A"), header = TRUE)
 dataset2 <- read.csv(file = "../Dataset_1_Quantitative_team.csv", na.strings = c("", " ", "No answer", "N/A"), header = TRUE)
@@ -249,21 +250,20 @@ ggplot(data = rankmatrix, aes(x = respondents, y = -score)) +
   geom_smooth(alpha=0.25, color="black", fill="black")
 
 #### calculating means for every course and for every question
-t.test_simple <- function(x){
-  temp <- t.test(x, na.rm = TRUE)
-  return(c(temp$conf.int[1], temp$conf.int[2], temp$estimate))
-}
-
 means <- overall_likert %>%
   group_by(Course.name) %>%
   summarise_each(funs(mean(., na.rm = TRUE)), matches("X"))
 
+row.names(means) <- means$Course.name
+means$Course.name <- NULL
+means_matrix <- data.matrix(means)
+
+#heatmap of all the means for every course and every question
+heatmap.2(means_matrix, cexRow = 0.5, cexCol = 1, trace = "none", margins = c(20,20), srtCol = 45, Colv = FALSE, keysize = 0.5)
+
 ###boxplot to help see problematic areas in all the courses
 par(mar=c(25,5,1,1))
 boxplot(means[,-1], las = 2)
-
-means %>%
-  summarise_each(funs(median(., na.rm = TRUE)), matches("X"))
 
 #creating a matrix with results printed side by side to compare the results
 compare <- cbind(as.character(sorted$Course.name), as.character(sorted2$V1))
