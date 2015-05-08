@@ -6,6 +6,7 @@ library(reshape)
 library(xtable)
 library(xlsx) #load the package
 library(gplots)
+library(ggplot2)
 
 dataset <- read.csv(file = "../Dataset_2.csv", na.strings = c("", " ", "No answer", "N/A"), header = TRUE)
 dataset2 <- read.csv(file = "../Dataset_1_Quantitative_team.csv", na.strings = c("", " ", "No answer", "N/A"), header = TRUE)
@@ -188,6 +189,19 @@ ggplot(data = moverall_cast, aes(x = respondents, y = score)) +
   geom_point(alpha=1, color="#c0392b") +
   geom_smooth(alpha=0.25, color="black", fill="black") 
   #geom_abline(intercept = 5.12599, slope = 0.07046)
+
+## Calculate the tertiles of the data
+cutpoints <- quantile(sorted$respondents, seq(0, 1, length = 5), na.rm = TRUE)
+
+## Cut the data at the tertiles and create a new factor variable
+sorted$resptert <- cut(sorted$respondents, cutpoints)
+levels(sorted$resptert)
+
+## Plot to show trends in each group with different numbers of respondents
+ggplot(data = sorted, aes(x = respondents, y = score, color = resptert)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+  
 
 #second way to find out rankings
 #each question (e.g. 3.1, 4.2, etc.) is ranked individually (1-80). Then these ranks are summed and divided by the number of questions.
